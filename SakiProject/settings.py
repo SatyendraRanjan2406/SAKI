@@ -161,4 +161,5 @@ SOCIALACCOUNT_PROVIDERS = {
     },
 }
 EXA_API_KEY = os.getenv('EXA_API_KEY')
+OPEN_AI_KEY = os.getenv('OPEN_AI_KEY')
 

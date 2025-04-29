@@ -6,14 +6,24 @@ def result_to_dict(result):
     return {
         'results': [
             {
-                'text': convert_to_readable_text(item.text),
-                'title': item.title,
-                'url': item.url,
-                'image': item.image
+                'text': webset_result_to_dict(item),
              }
             for item in result
         ]
     }
+
+
+def webset_result_to_dict(result):
+    # Convert the Exa result into a dict (handle `Result` objects here)
+    return {
+        'results': [
+            {
+                'text': str(item),
+             }
+            for item in result
+        ]
+    }
+
 
 
 def convert_to_readable_text(data):
