@@ -30,6 +30,7 @@ prompt= """
     Always paraphrase the criteria in short, clear bullet points.
     
     Do not simply copy and paste the text — analyze and summarize into search-friendly points.
+    Give output in form of pointed texts.
     
     Output format must be:
     
