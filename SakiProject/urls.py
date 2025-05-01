@@ -18,15 +18,12 @@ from django.contrib import admin
 from django.urls import path, include
 from social_django.context_processors import backends
 
-from sso.views import GoogleSSOView
-
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('accounts/', include('allauth.urls')),
     path('exa/', include('exaai.urls')),
     path('websets/', include('webset.urls')),
     path('sso/', include('sso.urls')),
-    path('user/', include('user.urls')),
+    path('', include('user.urls')),
     path('social-auth/', include('social_django.urls', namespace='social')),
 
 ]
