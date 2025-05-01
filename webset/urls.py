@@ -1,8 +1,16 @@
 from django.urls import path
-from exaai.views.exa_views import search_ai_blog
-from webset.views.webset import create_webset, get_webset
+from .views.webset import (
+    CreateWebsetView,
+    GetWebsetView,
+    UpdateWebsetsView,
+    GenerateSearchCriteriaView,
+    ListWebsetsView
+)
 
 urlpatterns = [
-    path('create/', create_webset, name='search_ai_blog'),
-    path('get/<webset_id>', get_webset, name='search_ai_blog'),
+    path('create/', CreateWebsetView.as_view(), name='create-webset'),
+    path('get/<str:webset_id>/', GetWebsetView.as_view(), name='get-webset'),
+    path('update/<str:webset_id>/', UpdateWebsetsView.as_view(), name='update-websets'),
+    path('generate-search-criteria/', GenerateSearchCriteriaView.as_view(), name='generate-search-criteria'),
+    path('list/', ListWebsetsView.as_view(), name='list-websets'),
 ]

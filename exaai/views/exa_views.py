@@ -1,6 +1,6 @@
 from django.http import JsonResponse
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 
 from SakiProject.settings import EXA_API_KEY
 from exaai.services.exa_service import ExaService
@@ -46,8 +46,10 @@ from webset.utils import convert_string_to_json
 
 """
 
-async def search_ai_blog(request):
-    if request.method == 'GET':
+class SearchAIBlogView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    async def get(self, request):
         exa_service = ExaService(api_key=EXA_API_KEY)
 
         query = convert_string_to_json(request.body).get('query')
@@ -70,5 +72,3 @@ async def search_ai_blog(request):
                 "data": []
             }
             return JsonResponse(response_data, status=404)
-    else:
-        return JsonResponse({"success": False, "message": "Invalid HTTP method."}, status=405)

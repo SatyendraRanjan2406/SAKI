@@ -109,3 +109,40 @@ def get_webset(webset_id):
         print(f"Item: {item.model_dump_json(indent=2)}")
 
     return items.data
+
+def update_webset(webset_id):
+    try:
+        # Get the existing webset
+        webset = exa.websets.get(webset_id)
+        if not webset:
+            return None
+
+        # Update the webset with new parameters
+        # Note: The actual update parameters would depend on what you want to update
+        # This is a basic example - you might want to add more parameters
+        updated_webset = exa.websets.update(
+            webset_id=webset_id,
+            params={
+                "search": {
+                    "query": webset.searches[0].query if webset.searches else "",
+                    "count": 5
+                },
+                "enrichments": [
+                    {
+                        "description": "LinkedIn profile of VP of Engineering or related role",
+                        "format": "text",
+                    }
+                ]
+            }
+        )
+
+        # Wait until the update is complete
+        updated_webset = exa.websets.wait_until_idle(webset_id)
+
+        # Get the updated items
+        items = exa.websets.items.list(webset_id=webset_id)
+        return items.data
+
+    except Exception as e:
+        print(f"Error updating webset: {str(e)}")
+        return None
