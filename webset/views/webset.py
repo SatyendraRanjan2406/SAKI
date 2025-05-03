@@ -1,3 +1,5 @@
+import json
+
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
@@ -7,6 +9,8 @@ from rest_framework.decorators import permission_classes, api_view
 import requests
 import os
 from dotenv import load_dotenv
+from rest_framework.response import Response
+from rest_framework import status
 
 from exaai.utils import result_to_dict
 from webset.services import websetService, openAIService
@@ -17,6 +21,7 @@ from webset.constants.api_constants import (
 )
 from webset.utils import get_exa_api_headers
 from webset.utils import get_webset_update_payload
+from webset.models import APIRequestResponse
 
 load_dotenv()
 
@@ -27,24 +32,17 @@ class CreateWebsetView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        query = convert_string_to_json(request.body).get('query')
-        if query is None:
-            return JsonResponse({'status': 'error', 'message': 'No query provided'},status=400)
-        result = websetService.create_webset(query)
-        if result:
-            response = {
-                "success": True,
-                "message": "Webset created successfully",
-                "data": result_to_dict(result)
-            }
-            return JsonResponse(response, status=200)
-        else:
-            response = {
-                "success": False,
-                "message": "Webset creation failed",
-                "data": []
-            }
-            return JsonResponse(response, status=400)
+        try:
+            result = websetService.create_webset(request.data)
+            return Response({
+                'request_id': result['request_id'],
+                'message': 'Webset creation initiated',
+                'data': result['data']
+            }, status=status.HTTP_202_ACCEPTED)
+        except Exception as e:
+            return Response({
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class GetWebsetView(APIView):
@@ -56,7 +54,7 @@ class GetWebsetView(APIView):
             response = {
                 "success": True,
                 "message": "Webset retrieved successfully",
-                "data": result_to_dict(result)
+                "data": json.loads(result[0].model_dump_json())
             }
             return JsonResponse(response, status=200)
         else:
@@ -92,12 +90,11 @@ class UpdateWebsetsView(APIView):
             
             if response.status_code == 200:
                 # Get the updated webset data
-                result = websetService.get_webset(webset_id)
-                if result:
+                if response.text:
                     response_data = {
                         "success": True,
                         "message": "Webset metadata updated successfully",
-                        "data": result_to_dict(result)
+                        "data": json.loads( response.text)
                     }
                     return JsonResponse(response_data, status=200)
                 else:
@@ -191,4 +188,15 @@ class ListWebsetsView(APIView):
                 "message": f"An error occurred: {str(e)}",
                 "data": []
             }, status=500)
+
+
+class WebsetRequestStatusView(APIView):
+    def get(self, request, request_id):
+        try:
+            result = websetService.get_request_status(request_id)
+            return Response(result, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                'error': str(e)
+            }, status=status.HTTP_404_NOT_FOUND)
 

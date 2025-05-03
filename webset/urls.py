@@ -4,7 +4,8 @@ from .views.webset import (
     GetWebsetView,
     UpdateWebsetsView,
     GenerateSearchCriteriaView,
-    ListWebsetsView
+    ListWebsetsView,
+    WebsetRequestStatusView,
 )
 
 urlpatterns = [
@@ -13,4 +14,5 @@ urlpatterns = [
     path('update/<str:webset_id>/', UpdateWebsetsView.as_view(), name='update-websets'),
     path('generate-search-criteria/', GenerateSearchCriteriaView.as_view(), name='generate-search-criteria'),
     path('list/', ListWebsetsView.as_view(), name='list-websets'),
+    path('status/<uuid:request_id>/', WebsetRequestStatusView.as_view(), name='webset-request-status'),
 ]

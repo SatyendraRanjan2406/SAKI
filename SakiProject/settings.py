@@ -39,9 +39,11 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'social_django',
+    'celery',
     'allauth',
     'user',
     'sso',
+    'webset',
 ]
 
 MIDDLEWARE = [
@@ -202,3 +204,10 @@ SOCIAL_AUTH_MICROSOFT_SECRET = os.getenv('MICROSOFT_CLIENT_SECRET')
 SOCIAL_AUTH_URL_NAMESPACE = 'social'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+# CELERY SETTINGS
+CELERY_BROKER_URL = "redis://localhost:6379"
+CELERY_RESULT_BACKEND = "redis://localhost:6379"
+
+
+

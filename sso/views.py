@@ -1,3 +1,5 @@
+import os
+
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -6,6 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from social_django.utils import psa, load_strategy, load_backend
 from user.models import User, UserProfile
 from user.serializers import UserDetailSerializer
+# from google.oauth2 import id_token
 
 class SSOBaseView(APIView):
     def get_or_create_user(self, user_data):
@@ -50,9 +53,22 @@ class GoogleSSOView(SSOBaseView):
 
             # Load the backend
             strategy = load_strategy(django_request)
-            backend_instance = load_backend(strategy=strategy, name=backend, redirect_uri=None)
-
+            backend_instance = load_backend(strategy=strategy, name='google-oauth2', redirect_uri=None)
             user = backend_instance.do_auth(request.data.get('access_token'))
+
+            # Verify token using Google
+            # idinfo = id_token.verify_oauth2_token(request.data.get('access_token'), django_request, os.getenv('GOOGLE_CLIENT_ID'))
+
+            # ID token is valid. Get the user's Google Account ID
+            # email = idinfo['email']
+            # first_name = idinfo.get('given_name', '')
+            # last_name = idinfo.get('family_name', '')
+            # user, created = User.objects.get_or_create(email=email, defaults={
+            #     'first_name': first_name,
+            #     'last_name': last_name,
+            #     'username': email,
+            # })
+
             if user and user.is_active:
                 tokens = self.get_tokens_for_user(user)
                 return Response({
