@@ -24,8 +24,40 @@ SECRET_KEY = 'django-insecure-y($bf2yyp4coadn#u0h7zo8z44le0z8ih+f-yvk-i1myjw@&_4
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
-
+CORS_ALLOW_ALL_ORIGINS = True  # Not recommended for production
+#CORS_ALLOWED_ORIGINS = ['https://972e-106-219-145-55.ngrok-free.app','http://127.0.0.1:8080', 'http://localhost:3000','https://localhost:8080',]
 ALLOWED_HOSTS = ['*']
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'x-api-key',
+    'access-control-allow-credentials',
+    'access-control-allow-origin',
+    'access-control-allow-headers',
+]
+
+# Add these settings for better CORS handling
+CORS_EXPOSE_HEADERS = [
+    'content-type',
+    'x-api-key',
+    'authorization',
+]
+CORS_PREFLIGHT_MAX_AGE = 86400  # 24 hours
 
 # Application definition
 
@@ -45,6 +77,7 @@ INSTALLED_APPS = [
     'user',
     'sso',
     'webset',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -57,8 +90,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'social_django.middleware.SocialAuthExceptionMiddleware',  # From social-auth-app-django
-
     # 🆕 Add our custom exception middleware
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'SakiProject.middleware.ExceptionMiddleware',
 
 ]
@@ -102,7 +136,7 @@ REST_FRAMEWORK = {
 # JWT Settings
 from datetime import timedelta
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=10),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': True,
