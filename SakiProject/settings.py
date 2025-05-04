@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
+    'corsheaders',
     'social_django',
     'celery',
     'allauth',
@@ -49,6 +50,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -209,5 +211,69 @@ LOGOUT_REDIRECT_URL = '/'
 CELERY_BROKER_URL = "redis://localhost:6379"
 CELERY_RESULT_BACKEND = "redis://localhost:6379"
 
+# CORS settings
+CORS_ALLOW_ALL_ORIGINS = False  # Disable in production
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # Your frontend development server
+    "http://localhost:8000",  # Your backend development server
+    "https://your-production-domain.com",  # Your production domain
+]
 
+# Allow credentials
+CORS_ALLOW_CREDENTIALS = True
 
+# Allowed methods
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+# Allowed headers - comprehensive list
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'x-api-key',
+    'access-control-allow-credentials',
+    'access-control-allow-origin',
+    'access-control-allow-headers',
+    'access-control-allow-methods',
+    'access-control-expose-headers',
+    'access-control-max-age',
+    'access-control-request-headers',
+    'access-control-request-method',
+    'cache-control',
+    'pragma',
+    'if-match',
+    'if-modified-since',
+    'if-none-match',
+    'if-unmodified-since',
+    'range',
+    'referer',
+    'sec-fetch-dest',
+    'sec-fetch-mode',
+    'sec-fetch-site',
+    'sec-fetch-user',
+    'upgrade-insecure-requests',
+]
+
+# Expose headers to the client
+CORS_EXPOSE_HEADERS = [
+    'content-type',
+    'x-api-key',
+    'authorization',
+    'access-control-allow-origin',
+    'access-control-allow-credentials',
+    'access-control-allow-headers',
+    'access-control-allow-methods',
+]

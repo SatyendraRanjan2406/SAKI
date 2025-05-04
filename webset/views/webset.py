@@ -14,6 +14,7 @@ from rest_framework import status
 
 from exaai.utils import result_to_dict
 from webset.services import websetService, openAIService
+from webset.services.websetService import WebsetServiceAsync
 from webset.utils import convert_string_to_json
 from webset.constants.api_constants import (
     EXA_WEBSETS_UPDATE_URL,
@@ -22,6 +23,7 @@ from webset.constants.api_constants import (
 from webset.utils import get_exa_api_headers
 from webset.utils import get_webset_update_payload
 from webset.models import APIRequestResponse
+from webset.services.websetService import WebsetItemService
 
 load_dotenv()
 
@@ -162,17 +164,37 @@ class ListWebsetsView(APIView):
 
     def get(self, request):
         try:
-            # Make the API call to list websets
+            # Get pagination parameters with defaults
+            cursor = request.query_params.get('cursor', '1')
+            limit = int(request.query_params.get('limit', 25))
+            
+            # Validate limit range
+            if not (1 <= limit <= 100):
+                return JsonResponse({
+                    "success": False,
+                    "message": "Limit must be between 1 and 100",
+                    "data": []
+                }, status=400)
+            
+            # Make the API call to list websets with pagination
             response = requests.get(
                 EXA_WEBSETS_LIST_URL,
-                headers=get_exa_api_headers()
+                headers=get_exa_api_headers(),
+                params={
+                    'cursor': cursor,
+                    'limit': limit
+                }
             )
             
             if response.status_code == 200:
                 response_data = {
                     "success": True,
                     "message": "Websets retrieved successfully",
-                    "data": response.json()
+                    "data": response.json(),
+                    "pagination": {
+                        "cursor": cursor,
+                        "limit": limit
+                    }
                 }
                 return JsonResponse(response_data, status=200)
             else:
@@ -182,6 +204,12 @@ class ListWebsetsView(APIView):
                     "data": []
                 }, status=response.status_code)
 
+        except ValueError:
+            return JsonResponse({
+                "success": False,
+                "message": "Invalid limit parameter. Must be a number.",
+                "data": []
+            }, status=400)
         except Exception as e:
             return JsonResponse({
                 "success": False,
@@ -193,10 +221,55 @@ class ListWebsetsView(APIView):
 class WebsetRequestStatusView(APIView):
     def get(self, request, request_id):
         try:
-            result = websetService.get_request_status(request_id)
+            result = WebsetServiceAsync.get_request_status(request_id)
             return Response(result, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({
                 'error': str(e)
             }, status=status.HTTP_404_NOT_FOUND)
+
+
+class GetWebsetItemView(APIView):
+    def get(self, request, webset_id, item_id):
+        try:
+            result = WebsetItemService.get_webset_item(webset_id, item_id)
+            return Response({
+                'request_id': result['request_id'],
+                'data': result['data']
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ListWebsetItemsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, webset_id):
+        try:
+            # Get pagination parameters with defaults
+            cursor = request.query_params.get('cursor', '1')
+            limit = int(request.query_params.get('limit', 25))
+            
+            result = WebsetItemService.list_webset_items(
+                webset_id=webset_id,
+                cursor=cursor,
+                limit=limit
+            )
+            
+            return Response({
+                'request_id': result['request_id'],
+                'data': result['data'],
+                'pagination': result['pagination']
+            }, status=status.HTTP_200_OK)
+            
+        except ValueError as e:
+            return Response({
+                'error': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                'error': str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

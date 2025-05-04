@@ -1,5 +1,5 @@
 import os
-
+import requests
 from dotenv import load_dotenv
 from exa_py import Exa
 from exa_py.websets.types import CreateWebsetParameters, CreateEnrichmentParameters
@@ -9,6 +9,7 @@ from webset.models import APIRequestResponse
 import uuid
 import json
 from django.core.serializers.json import DjangoJSONEncoder
+from webset.constants.api_constants import  EXA_WEBSETS_ITEMS_URL, EXA_WEBSETS_ITEMS_LIST_URL
 
 load_dotenv()
 exa = Exa(os.getenv('EXA_API_KEY'))
@@ -73,7 +74,7 @@ exa = Exa(os.getenv('EXA_API_KEY'))
 }
 """
 
-class websetService:
+class WebsetServiceAsync:
     @staticmethod
     def create_webset(request_data):
         try:
@@ -90,7 +91,7 @@ class websetService:
             
             # Update the request record with the response
             request_record.response_body = response_data
-            request_record.status = 'completed'
+            request_record.status = 'pe'
             request_record.save()
             
             # Return response with request_id
@@ -125,6 +126,7 @@ class websetService:
         except Exception as e:
             raise Exception(f"Error retrieving request status: {str(e)}")
 
+
 def create_webset(request_data):
     try:
         # Create a new request record
@@ -147,12 +149,12 @@ def create_webset(request_data):
                     "query": request_data["query"],
                     "count": 5
                 },
-                # enrichments=[
-                #     CreateEnrichmentParameters(
-                #         description="LinkedIn profile of VP of Engineering or related role",
-                #         format="text",
-                #     ),
-                # ],
+                enrichments=[
+                    CreateEnrichmentParameters(
+                        description="LinkedIn profile of VP of Engineering or related role",
+                        format="text",
+                    ),
+                ],
             )
         )
 
@@ -205,6 +207,7 @@ def get_webset(webset_id):
 
     return items.data
 
+
 def update_webset(webset_id):
     try:
         # Get the existing webset
@@ -241,3 +244,117 @@ def update_webset(webset_id):
     except Exception as e:
         print(f"Error updating webset: {str(e)}")
         return None
+
+class WebsetItemService:
+    @staticmethod
+    def get_webset_item(webset_id, item_id):
+        request_record={}
+        try:
+            # Create a new request record
+            request_record = APIRequestResponse.objects.create(
+                request_body={
+                    "webset_id": webset_id,
+                    "item_id": item_id
+                }
+            )
+            
+            # Make the API request
+            url = EXA_WEBSETS_ITEMS_URL.format(webset_id=webset_id, item_id=item_id)
+            headers = {"x-api-key": os.getenv('EXA_API_KEY')}
+            
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()  # Raise an exception for bad status codes
+            
+            response_data = response.json()
+            
+            # Update the request record with the response
+            request_record.response_body = response_data
+            request_record.status = 'completed'
+            request_record.save()
+            
+            return {
+                'request_id': str(request_record.request_id),
+                'data': response_data
+            }
+            
+        except requests.exceptions.RequestException as e:
+            # Update request record with error
+            if 'request_record' in locals():
+                request_record.status = 'failed'
+                request_record.error_message = str(e)
+                request_record.save()
+            
+            raise Exception(f"Error fetching webset item: {str(e)}")
+        except Exception as e:
+            # Update request record with error
+            if 'request_record' in locals():
+                request_record.status = 'failed'
+                request_record.error_message = str(e)
+                request_record.save()
+            
+            raise Exception(f"Error processing webset item request: {str(e)}")
+
+
+    @staticmethod
+    def list_webset_items(webset_id, cursor='1', limit="25"):
+        request_record ={}
+        try:
+            # Create a new request record
+            request_record = APIRequestResponse.objects.create(
+                request_body={
+                    "webset_id": webset_id,
+                    "cursor": cursor,
+                    "limit": limit
+                }
+            )
+            
+            # Validate limit range
+            if not (1 <= limit <= 100):
+                raise ValueError("Limit must be between 1 and 100")
+            
+            # Make the API request
+            url = EXA_WEBSETS_ITEMS_LIST_URL.format(webset_id=webset_id)
+            headers = {"x-api-key": os.getenv('EXA_API_KEY')}
+            params = {
+                'cursor': cursor,
+                'limit': "3"
+            }
+            
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            
+            response_data = response.json()
+            
+            # Update the request record with the response
+            response_data["webset_id"]=webset_id
+            request_record.response_body = response_data
+            request_record.status = 'completed'
+            request_record.save()
+            
+            return {
+                'request_id': str(request_record.request_id),
+                'data': response_data,
+                'pagination': {
+                    'cursor': cursor,
+                    'limit': limit
+                }
+            }
+            
+        except requests.exceptions.RequestException as e:
+            if 'request_record' in locals():
+                request_record.status = 'failed'
+                request_record.error_message = str(e)
+                request_record.save()
+            raise Exception(f"Error fetching webset items: {str(e)}")
+        except ValueError as e:
+            if 'request_record' in locals():
+                request_record.status = 'failed'
+                request_record.error_message = str(e)
+                request_record.save()
+            raise e
+        except Exception as e:
+            if 'request_record' in locals():
+                request_record.status = 'failed'
+                request_record.error_message = str(e)
+                request_record.save()
+            raise Exception(f"Error processing webset items request: {str(e)}")
